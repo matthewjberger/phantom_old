@@ -35,14 +35,15 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn new() -> Result<Self> {
+    pub fn run(_config: Config) -> Result<()> {
+        Self::initialize_logger()?;
+        Ok(())
+    }
+
+    fn initialize_logger() -> Result<()> {
         if let Err(error) = Logger::init() {
             return Err(AppError::InitializeLogger(error));
         }
-        Ok(Self {})
-    }
-
-    pub fn run(self) -> Result<()> {
         log::info!("Initialized Phantom Game Engine");
         Ok(())
     }

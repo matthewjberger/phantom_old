@@ -1,7 +1,7 @@
 use anyhow::Result;
-use phantom::core::Application;
+use phantom::core::{Application, Config};
 
 fn main() -> Result<()> {
-    Application::new()?.run()?;
+    Application::run(Config::default())?;
     Ok(())
 }
