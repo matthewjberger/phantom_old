@@ -1,5 +1,12 @@
 use crate::logger::Logger;
+use image::io::Reader;
 use thiserror::Error;
+use winit::{
+    dpi::PhysicalSize,
+    event::Event,
+    event_loop::EventLoop,
+    window::{Icon, WindowBuilder},
+};
 
 #[derive(Error, Debug)]
 pub enum AppError {
@@ -35,9 +42,35 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn run(_config: Config) -> Result<()> {
+    pub fn run(config: Config) -> Result<()> {
         Self::initialize_logger()?;
-        Ok(())
+
+        let event_loop = EventLoop::new();
+
+        let mut window_builder = WindowBuilder::new()
+            .with_title(config.title.to_string())
+            .with_inner_size(PhysicalSize::new(config.width, config.height));
+
+        // if let Some(icon_path) = config.icon.as_ref() {
+        //     let image = Reader::open(icon_path)?.decode()?.into_rgba8();
+        //     let (width, height) = image.dimensions();
+        //     let icon = Icon::from_rgba(image.into_raw(), width, height)?;
+        //     window_builder = window_builder.with_window_icon(Some(icon));
+        // }
+
+        let mut window = window_builder.build(&event_loop).unwrap();
+
+        let window_dimensions = window.inner_size();
+
+        event_loop.run(move |event, _, control_flow| {
+            match event {
+                Event::MainEventsCleared => {
+                    // update
+                    // render
+                }
+                _ => (),
+            }
+        });
     }
 
     fn initialize_logger() -> Result<()> {
