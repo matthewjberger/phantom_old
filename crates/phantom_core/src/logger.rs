@@ -2,7 +2,7 @@ use log::{Level, LevelFilter, Log, Metadata, Record, SetLoggerError};
 
 const LOGGER: &'static Logger = &Logger;
 
-pub struct Logger;
+pub(crate) struct Logger;
 
 impl Logger {
     pub fn init() -> Result<(), SetLoggerError> {
