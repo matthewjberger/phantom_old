@@ -26,6 +26,12 @@ pub trait State<R, T, E> {
     fn update(&mut self, _data: StateData<'_, R, T>) -> Transition<R, T, E> {
         Transition::None
     }
+
+    // Add on_key
+    // Add on_file_dropped
+    // Add on_close_requested
+    // Add on_mouse_input
+    // Add on_resize
 }
 
 pub struct StateData<'a, R, T> {

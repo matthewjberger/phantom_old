@@ -1,11 +1,10 @@
-use crate::logger::Logger;
-use image::io::Reader;
+use crate::{logger::Logger, State, StateData, StateMachine};
 use thiserror::Error;
 use winit::{
     dpi::PhysicalSize,
     event::Event,
-    event_loop::{self, EventLoop},
-    window::{Icon, Window, WindowBuilder},
+    event_loop::{ControlFlow, EventLoop},
+    window::{Window, WindowBuilder},
 };
 
 #[derive(Error, Debug)]
@@ -37,21 +36,26 @@ impl Default for Config {
     }
 }
 
-pub struct Application {
-    // state_machine: StateMachine,
-}
+pub struct Application;
 
 impl Application {
-    pub fn run(config: Config) -> Result<()> {
+    pub fn run(
+        config: Config,
+        initial_state: impl State<(), (), ()> + 'static,
+    ) -> Result<()> {
         initialize_logger()?;
 
-        let (event_loop, window) = create_window(config)?;
+        let (event_loop, _window) = create_window(config)?;
+
+        let mut state_machine = StateMachine::new(initial_state);
+        state_machine.start(StateData::new(&mut (), &mut ())).unwrap();
 
         event_loop.run(move |event, _, control_flow| {
+            *control_flow = ControlFlow::Poll;
+
             match event {
                 Event::MainEventsCleared => {
-                    // update
-                    // render
+                    state_machine.update(StateData::new(&mut (), &mut ()));
                 }
                 _ => (),
             }
