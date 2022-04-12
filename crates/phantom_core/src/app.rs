@@ -1,8 +1,10 @@
 use crate::logger::Logger;
+use thiserror::Error;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum AppError {
-    InitializeLogger,
+    #[error("Failed to initialize the logger.")]
+    InitializeLogger(log::SetLoggerError),
 }
 
 type Result<T, E = AppError> = std::result::Result<T, E>;
@@ -34,7 +36,9 @@ pub struct Application {
 
 impl Application {
     pub fn new() -> Result<Self> {
-        Logger::init().unwrap();
+        if let Err(error) = Logger::init() {
+            return Err(AppError::InitializeLogger(error));
+        }
         Ok(Self {})
     }
 
