@@ -44,11 +44,57 @@ impl Application {
         initial_state: impl State<(), (), ()> + 'static,
     ) -> Result<()> {
         initialize_logger()?;
+        WinitWindowBackend::run(config, initial_state)
+    }
+}
 
-        let (event_loop, _window) = create_window(config)?;
+fn initialize_logger() -> Result<()> {
+    if let Err(error) = Logger::init() {
+        return Err(AppError::InitializeLogger(error));
+    }
+    log::info!("Initialized Phantom Game Engine");
+    Ok(())
+}
 
+trait WindowBackend {
+    fn run(
+        config: Config,
+        initial_state: impl State<(), (), ()> + 'static,
+    ) -> Result<()>;
+}
+
+struct WinitWindowBackend;
+
+impl WinitWindowBackend {
+    pub fn create_window(config: Config) -> Result<(EventLoop<()>, Window)> {
+        let event_loop = EventLoop::new();
+
+        let window_builder = WindowBuilder::new()
+            .with_title(config.title.to_string())
+            .with_inner_size(PhysicalSize::new(config.width, config.height));
+
+        // if let Some(icon_path) = config.icon.as_ref() {
+        //     let image = Reader::open(icon_path)?.decode()?.into_rgba8();
+        //     let (width, height) = image.dimensions();
+        //     let icon = Icon::from_rgba(image.into_raw(), width, height)?;
+        //     window_builder = window_builder.with_window_icon(Some(icon));
+        // }
+
+        let window = window_builder.build(&event_loop).unwrap();
+
+        Ok((event_loop, window))
+    }
+}
+
+impl WindowBackend for WinitWindowBackend {
+    fn run(
+        config: Config,
+        initial_state: impl State<(), (), ()> + 'static,
+    ) -> Result<()> {
         let mut state_machine = StateMachine::new(initial_state);
         state_machine.start(StateData::new(&mut (), &mut ())).unwrap();
+
+        let (event_loop, window) = Self::create_window(config).unwrap();
 
         event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Poll;
@@ -61,31 +107,4 @@ impl Application {
             }
         });
     }
-}
-
-fn initialize_logger() -> Result<()> {
-    if let Err(error) = Logger::init() {
-        return Err(AppError::InitializeLogger(error));
-    }
-    log::info!("Initialized Phantom Game Engine");
-    Ok(())
-}
-
-fn create_window(config: Config) -> Result<(EventLoop<()>, Window)> {
-    let event_loop = EventLoop::new();
-
-    let window_builder = WindowBuilder::new()
-        .with_title(config.title.to_string())
-        .with_inner_size(PhysicalSize::new(config.width, config.height));
-
-    // if let Some(icon_path) = config.icon.as_ref() {
-    //     let image = Reader::open(icon_path)?.decode()?.into_rgba8();
-    //     let (width, height) = image.dimensions();
-    //     let icon = Icon::from_rgba(image.into_raw(), width, height)?;
-    //     window_builder = window_builder.with_window_icon(Some(icon));
-    // }
-
-    let window = window_builder.build(&event_loop).unwrap();
-
-    Ok((event_loop, window))
 }
