@@ -1,19 +1,16 @@
-use crate::{logger::Logger, State, StateData, StateMachine};
+use crate::{logger::Logger, winit::run_winit, State};
 use thiserror::Error;
-use winit::{
-    dpi::PhysicalSize,
-    event::Event,
-    event_loop::{ControlFlow, EventLoop},
-    window::{Window, WindowBuilder},
-};
 
 #[derive(Error, Debug)]
-pub enum AppError {
-    #[error("Failed to initialize the logger.")]
+pub enum Error {
+    #[error("Failed to initialize the logger")]
     InitializeLogger(log::SetLoggerError),
+
+    #[error("Failed to initialize winit")]
+    InitializeWinit(#[from] crate::winit::Error),
 }
 
-type Result<T, E = AppError> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug)]
 pub struct Config {
@@ -39,72 +36,24 @@ impl Default for Config {
 pub struct Application;
 
 impl Application {
+    pub fn new() -> Result<Self> {
+        Ok(Self {})
+    }
+
     pub fn run(
+        self,
         config: Config,
         initial_state: impl State<(), (), ()> + 'static,
     ) -> Result<()> {
         initialize_logger()?;
-        WinitWindowBackend::run(config, initial_state)
+        run_winit(config, initial_state).map_err(Error::InitializeWinit)
     }
 }
 
 fn initialize_logger() -> Result<()> {
     if let Err(error) = Logger::init() {
-        return Err(AppError::InitializeLogger(error));
+        return Err(Error::InitializeLogger(error));
     }
     log::info!("Initialized Phantom Game Engine");
     Ok(())
-}
-
-trait WindowBackend {
-    fn run(
-        config: Config,
-        initial_state: impl State<(), (), ()> + 'static,
-    ) -> Result<()>;
-}
-
-struct WinitWindowBackend;
-
-impl WinitWindowBackend {
-    pub fn create_window(config: Config) -> Result<(EventLoop<()>, Window)> {
-        let event_loop = EventLoop::new();
-
-        let window_builder = WindowBuilder::new()
-            .with_title(config.title.to_string())
-            .with_inner_size(PhysicalSize::new(config.width, config.height));
-
-        // if let Some(icon_path) = config.icon.as_ref() {
-        //     let image = Reader::open(icon_path)?.decode()?.into_rgba8();
-        //     let (width, height) = image.dimensions();
-        //     let icon = Icon::from_rgba(image.into_raw(), width, height)?;
-        //     window_builder = window_builder.with_window_icon(Some(icon));
-        // }
-
-        let window = window_builder.build(&event_loop).unwrap();
-
-        Ok((event_loop, window))
-    }
-}
-
-impl WindowBackend for WinitWindowBackend {
-    fn run(
-        config: Config,
-        initial_state: impl State<(), (), ()> + 'static,
-    ) -> Result<()> {
-        let mut state_machine = StateMachine::new(initial_state);
-        state_machine.start(StateData::new(&mut (), &mut ())).unwrap();
-
-        let (event_loop, window) = Self::create_window(config).unwrap();
-
-        event_loop.run(move |event, _, control_flow| {
-            *control_flow = ControlFlow::Poll;
-
-            match event {
-                Event::MainEventsCleared => {
-                    state_machine.update(StateData::new(&mut (), &mut ()));
-                }
-                _ => (),
-            }
-        });
-    }
 }

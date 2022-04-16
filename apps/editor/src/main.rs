@@ -16,6 +16,6 @@ impl State<(), (), ()> for EditorState {
 }
 
 fn main() -> Result<()> {
-    Application::run(Config::default(), EditorState::default())?;
+    Application::new()?.run(Config::default(), EditorState::default())?;
     Ok(())
 }

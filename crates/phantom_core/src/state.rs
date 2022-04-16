@@ -1,12 +1,12 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum StateMachineError {
+pub enum Error {
     #[error("No states are present. At least one state is required to start the state machine.")]
     NoStatesPresent,
 }
 
-type Result<T, E = StateMachineError> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub trait State<R, T, E> {
     fn label(&self) -> String {
@@ -81,10 +81,8 @@ impl<'a, R, T, E> StateMachine<'a, R, T, E> {
 
     pub fn start(&mut self, data: StateData<'_, R, T>) -> Result<()> {
         if !self.running {
-            let state = self
-                .states
-                .last_mut()
-                .ok_or(StateMachineError::NoStatesPresent)?;
+            let state =
+                self.states.last_mut().ok_or(Error::NoStatesPresent)?;
             state.on_start(data);
             self.running = true;
         }
